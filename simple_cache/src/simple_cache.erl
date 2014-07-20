@@ -9,14 +9,17 @@
 insert(Key, Value) ->
     case simple_cache_store:lookup(Key) of
         {ok, Pid} ->
+            simple_cache_event:replace(Key, Value),
             simple_cache_element:replace(Pid, Value);
         {error, _Reason} ->
+            simple_cache_event:create(Key, Value),
             {ok, Pid} = simple_cache_element:create(Value),
             simple_cache_store:insert(Key, Pid)
     end.
 
 lookup(Key) ->
     try
+        simple_cache_event:lookup(Key),
         {ok, Pid} = simple_cache_store:lookup(Key),
         {ok, Value} = simple_cache_element:fetch(Pid),
         {ok, Value}
@@ -27,6 +30,8 @@ lookup(Key) ->
 
 delete(Key) ->
     case simple_cache_store:lookup(Key) of
-        {ok, Pid} -> simple_cache_element:delete(Pid);
+        {ok, Pid} ->
+            simple_cache_event:delete(Key),
+            simple_cache_element:delete(Pid);
         {error, _Reason} -> ok
     end.
